@@ -1,41 +1,62 @@
-const fs = require("fs");
+const express = require("express");
+const multer = require("multer");
 const csv = require("csv-parser");
+const fs = require("fs");
+const path = require("path");
+const cors = require("cors");
 
-const INPUT_CSV = "a.csv";
+const app = express();
+const upload = multer({ dest: "uploads/" });
 
-const services = {};
+app.use(cors());
+app.use(express.static(path.join(__dirname, "public")));
 
-fs.createReadStream(INPUT_CSV)
-  .pipe(csv())
-  .on("data", (row) => {
-    const key = row.key;
+app.post("/upload", upload.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "Arquivo não enviado" });
 
-    if (!services[key]) {
-      services[key] = {
-        key: row.key,
-        icon: row.icon,
-        logo: row.logo,
-        title: row.title,
-        category: row.category,
-        managedByTuna: row.managedByTuna.toLowerCase() === "true",
-        details: [],
-      };
-    }
+  const services = {};
+  const filepath = req.file.path;
 
-    let tags = [];
-    if (row["details.tags"]) {
-      tags = row["details.tags"]
-        .split(";")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    }
+  fs.createReadStream(filepath)
+    .pipe(csv())
+    .on("data", (row) => {
+      const key = row.key;
+      if (!services[key]) {
+        services[key] = {
+          key: key,
+          icon: row.icon,
+          logo: row.logo,
+          title: row.title,
+          category: row.category,
+          managedByTuna: row.managedByTuna.toLowerCase() === "true",
+          details: [],
+        };
+      }
 
-    services[key].details.push({
-      lane: row["details.lane"] || null,
-      tags,
+      let tags = [];
+      if (row["details.tags"]) {
+        tags = row["details.tags"]
+          .split(";")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+
+      services[key].details.push({
+        lane: row["details.lane"] || null,
+        tags,
+      });
+    })
+    .on("end", () => {
+      fs.unlinkSync(filepath);
+      res.json(Object.values(services));
+    })
+    .on("error", (err) => {
+      console.error("Erro ao processar CSV:", err);
+      res.status(500).json({ error: "Erro ao processar CSV" });
     });
-  })
-  .on("end", () => {
-    const output = Object.values(services);
-    console.log(JSON.stringify(output, null, 2));
-  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});

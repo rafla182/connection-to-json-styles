@@ -1,50 +1,86 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Upload CSV</title>
-  <style>
-    body { font-family: Arial; margin: 50px; }
-    .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; text-align: center; }
-    input[type="file"] { margin: 20px 0; }
-    button { padding: 10px 20px; cursor: pointer; }
-    .message { margin-top: 20px; color: green; text-align: left; white-space: pre-wrap; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; font-family: monospace; background-color: #f9f9f9; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Upload CSV</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 50px;
+  }
+  .container {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    text-align: center;
+  }
+  input[type="file"] {
+    margin: 20px 0;
+  }
+  button {
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  .message {
+    margin-top: 20px;
+    color: green;
+    text-align: left;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-family: monospace;
+    background-color: #f9f9f9;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h2>Upload de CSV</h2>
-    <form id="uploadForm">
-      <input type="file" id="csvFile" accept=".csv" required />
-      <br />
-      <button type="submit">Enviar CSV</button>
-    </form>
-    <div class="message" id="message"></div>
-  </div>
-  <script>
-    const form = document.getElementById("uploadForm");
-    const message = document.getElementById("message");
-    form.addEventListener("submit", async e => {
-      e.preventDefault();
-      const fileInput = document.getElementById("csvFile");
-      if (!fileInput.files.length) return;
-      message.textContent = "Enviando arquivo...";
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
-      try {
-        const response = await fetch("/upload", { method: "POST", body: formData });
-        if (response.ok) {
-          const json = await response.json();
-          message.textContent = "✅ CSV enviado com sucesso!\n\n" + JSON.stringify(json, null, 2);
-        } else {
-          const errorText = await response.text();
-          message.textContent = "❌ Erro ao enviar: " + errorText;
-        }
-      } catch (error) {
-        message.textContent = "❌ Erro de conexão.";
+<div class="container">
+  <h2>Upload de CSV</h2>
+  <form id="uploadForm">
+    <input type="file" id="csvFile" accept=".csv" required />
+    <br />
+    <button type="submit">Enviar CSV</button>
+  </form>
+  <div class="message" id="message"></div>
+</div>
+<script>
+  const form = document.getElementById("uploadForm");
+  const message = document.getElementById("message");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fileInput = document.getElementById("csvFile");
+    if (!fileInput.files.length) return;
+
+    message.textContent = "Enviando arquivo...";
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        message.textContent = "✅ CSV enviado com sucesso!\n\n" + JSON.stringify(json, null, 2);
+      } else {
+        const errorText = await response.text();
+        message.textContent = "❌ Erro ao enviar: " + errorText;
       }
-    });
-  </script>
+    } catch (error) {
+      console.error(error);
+      message.textContent = "❌ Erro de conexão.";
+    }
+  });
+</script>
 </body>
 </html>
