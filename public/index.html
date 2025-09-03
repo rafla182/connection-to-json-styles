@@ -1,86 +1,170 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Upload CSV</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 50px;
-  }
-  .container {
-    max-width: 400px;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    text-align: center;
-  }
-  input[type="file"] {
-    margin: 20px 0;
-  }
-  button {
-    padding: 10px 20px;
-    cursor: pointer;
-  }
-  .message {
-    margin-top: 20px;
-    color: green;
-    text-align: left;
-    white-space: pre-wrap;
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    padding: 10px;
-    font-family: monospace;
-    background-color: #f9f9f9;
-  }
-</style>
-</head>
-<body>
-<div class="container">
-  <h2>Upload de CSV</h2>
-  <form id="uploadForm">
-    <input type="file" id="csvFile" accept=".csv" required />
-    <br />
-    <button type="submit">Enviar CSV</button>
-  </form>
-  <div class="message" id="message"></div>
-</div>
-<script>
-  const form = document.getElementById("uploadForm");
-  const message = document.getElementById("message");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const fileInput = document.getElementById("csvFile");
-    if (!fileInput.files.length) return;
-
-    message.textContent = "Enviando arquivo...";
-
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
-
-    try {
-      const response = await fetch("/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const json = await response.json();
-        message.textContent = "✅ CSV enviado com sucesso!\n\n" + JSON.stringify(json, null, 2);
-      } else {
-        const errorText = await response.text();
-        message.textContent = "❌ Erro ao enviar: " + errorText;
-      }
-    } catch (error) {
-      console.error(error);
-      message.textContent = "❌ Erro de conexão.";
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload CSV</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 50px;
     }
-  });
-</script>
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      text-align: left;
+    }
+
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 20px;
+      color: green;
+      text-align: left;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      font-family: monospace;
+      background-color: #f9f9f9;
+    }
+
+
+    .container {
+      max-width: 800px;
+      /* Aumenta a largura */
+      margin: 50px auto;
+      /* Centraliza horizontalmente mantendo a margem superior */
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      text-align: left;
+      /* Alinha o texto e conteúdo à esquerda */
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+    }
+
+    .result-row {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+      gap: 10px;
+    }
+
+    .result-col {
+      overflow-wrap: break-word;
+    }
+
+    .json-col {
+      flex: 0 0 30%;
+      background-color: #f0f8ff;
+      padding: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    .update-col {
+      flex: 0 0 70%;
+      background-color: #e6f0ff;
+      padding: 10px;
+      font-family: monospace;
+      color: darkblue;
+      white-space: pre-wrap;
+    }
+
+    .result-header {
+      font-weight: bold;
+      border-bottom: 2px solid #444;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+
+    /* Adicionar container para os resultados com margem acima */
+    #results {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Upload de CSV</h2>
+    <form id="uploadForm">
+      <input type="file" id="csvFile" accept=".csv" required />
+      <br />
+      <button type="submit">Enviar CSV</button>
+    </form>
+    <div class="message" id="message"></div>
+    <div id="results"></div> <!-- Novo container para resultados -->
+  </div>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const message = document.getElementById("message");
+    const results = document.getElementById("results");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fileInput = document.getElementById("csvFile");
+      if (!fileInput.files.length) return;
+
+      message.textContent = "Enviando arquivo...";
+      results.innerHTML = "";
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          message.textContent = "✅ CSV enviado com sucesso!";
+
+          // Cabeçalho com duas colunas
+          let html = '<div class="result-row result-header">';
+          html += '<div class="result-col json-col">JSON do Serviço</div>';
+          html += '<div class="result-col update-col">Comando UPDATE</div>';
+          html += '</div>';
+
+          const data = json.data;
+          const updates = json.sql_updates;
+
+          for (let i = 0; i < data.length; i++) {
+            html += '<div class="result-row">';
+            html += `<div class="result-col json-col">${JSON.stringify(data[i], null, 2)}</div>`;
+            html += `<div class="result-col update-col">${updates[i]}</div>`;
+            html += '</div>';
+          }
+
+          results.innerHTML = html;
+        } else {
+          const errorText = await response.text();
+          message.textContent = "❌ Erro ao enviar: " + errorText;
+        }
+      } catch (error) {
+        console.error(error);
+        message.textContent = "❌ Erro de conexão.";
+      }
+    });
+  </script>
+
 </body>
+
 </html>

@@ -10,7 +10,6 @@ const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
-
 app.post("/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Arquivo não enviado" });
 
@@ -23,14 +22,17 @@ app.post("/upload", upload.single("file"), (req, res) => {
       const key = row.key;
       if (!services[key]) {
         services[key] = {
-          service_id: service_id,
-          key: key,
+          // Não incluir service_id aqui diretamente:
+          key: row.key,
           icon: row.icon,
           logo: row.logo,
           title: row.title,
           category: row.category,
           managedByTuna: row.managedByTuna.toLowerCase() === "true",
           details: [],
+
+          // Guardar service_id em propriedade interna para uso interno
+          _service_id: row.service_id,
         };
       }
 
@@ -49,7 +51,26 @@ app.post("/upload", upload.single("file"), (req, res) => {
     })
     .on("end", () => {
       fs.unlinkSync(filepath);
-      res.json(Object.values(services));
+
+      // Gerar resultado sem _service_id para JSON
+      const result = Object.values(services).map(({ _service_id, ...rest }) => rest);
+
+      // Gerar updates usando _service_id do original
+      const updates = Object.values(services).map(service => {
+        const stylesJson = JSON.stringify({
+          key: service.key,
+          icon: service.icon,
+          logo: service.logo,
+          title: service.title,
+          category: service.category,
+          managedByTuna: service.managedByTuna,
+          details: service.details,
+        });
+        const escapedStyles = stylesJson.replace(/'/g, "''");
+        return `UPDATE payment.service\nSET styles='${escapedStyles}'\nWHERE service_id=${service._service_id};`;
+      });
+
+      res.json({ data: result, sql_updates: updates });
     })
     .on("error", (err) => {
       console.error("Erro ao processar CSV:", err);
