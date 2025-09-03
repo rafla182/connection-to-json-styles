@@ -23,6 +23,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
       const key = row.key;
       if (!services[key]) {
         services[key] = {
+          service_id: service_id,
           key: key,
           icon: row.icon,
           logo: row.logo,
@@ -36,7 +37,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
       let tags = [];
       if (row["details.tags"]) {
         tags = row["details.tags"]
-          .split(";")
+          .split(",")
           .map((t) => t.trim())
           .filter(Boolean);
       }
