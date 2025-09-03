@@ -102,10 +102,20 @@
   <div class="container">
     <h2>Upload de CSV</h2>
     <form id="uploadForm">
-      <input type="file" id="csvFile" accept=".csv" required />
+      <input type="file" id="csvFile" accept=".csv" />
       <br />
       <button type="submit">Enviar CSV</button>
     </form>
+
+    <hr />
+
+    <form id="stringForm">
+      <label for="csvString"><b>Ou cole a string CSV:</b></label><br>
+      <textarea id="csvString" rows="4" cols="100" placeholder="Cole aqui a string CSV"></textarea>
+      <br />
+      <button type="submit">Converter String</button>
+    </form>
+
     <div class="message" id="message"></div>
     <div id="results"></div> <!-- Novo container para resultados -->
   </div>
@@ -138,6 +148,53 @@
           message.textContent = "✅ CSV enviado com sucesso!";
 
           // Cabeçalho com duas colunas
+          let html = '<div class="result-row result-header">';
+          html += '<div class="result-col json-col">JSON do Serviço</div>';
+          html += '<div class="result-col update-col">Comando UPDATE</div>';
+          html += '</div>';
+
+          const data = json.data;
+          const updates = json.sql_updates;
+
+          for (let i = 0; i < data.length; i++) {
+            html += '<div class="result-row">';
+            html += `<div class="result-col json-col">${JSON.stringify(data[i], null, 2)}</div>`;
+            html += `<div class="result-col update-col">${updates[i]}</div>`;
+            html += '</div>';
+          }
+
+          results.innerHTML = html;
+        } else {
+          const errorText = await response.text();
+          message.textContent = "❌ Erro ao enviar: " + errorText;
+        }
+      } catch (error) {
+        console.error(error);
+        message.textContent = "❌ Erro de conexão.";
+      }
+    });
+
+    // Novo handler para string CSV
+    const stringForm = document.getElementById("stringForm");
+    stringForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const csvString = document.getElementById("csvString").value.trim();
+      if (!csvString) return;
+
+      message.textContent = "Enviando string...";
+      results.innerHTML = "";
+
+      try {
+        const response = await fetch("/upload-string", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv: csvString }),
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          message.textContent = "✅ String enviada com sucesso!";
+
           let html = '<div class="result-row result-header">';
           html += '<div class="result-col json-col">JSON do Serviço</div>';
           html += '<div class="result-col update-col">Comando UPDATE</div>';
